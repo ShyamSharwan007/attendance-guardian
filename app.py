@@ -204,10 +204,9 @@ with st.sidebar:
     st.toggle("Demo mode (never send)", key="force_demo",
               help="Simulate every email and call even if credentials are configured.")
     settings = load_settings(force_demo=ss.force_demo)
-    st.caption(
-        f"Email: **{'Live (Gmail)' if settings.email_live else 'Demo'}**  \n"
-        f"Calls: **{'Live (Twilio)' if settings.calls_live else 'Demo'}**  \n"
-        f"Email text: **{'Gemini + template fallback' if settings.ai_enabled else 'Template'}**")
+    st.markdown(f"Email: **{'LIVE' if settings.email_live else 'DEMO'}**, "
+                f"Calls: **{'LIVE' if settings.calls_live else 'DEMO'}**")
+    st.caption(f"Email text: **{'Gemini + template fallback' if settings.ai_enabled else 'Template'}**")
     if settings.test_email or settings.test_phone:
         st.caption("Test overrides active: messages go to TEST_EMAIL / TEST_PHONE.")
     st.divider()

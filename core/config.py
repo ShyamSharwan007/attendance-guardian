@@ -32,6 +32,21 @@ def get_secret(key: str, default: str | None = None) -> str | None:
     return value if value not in (None, "") else default
 
 
+def get_first_secret(*keys: str, default: str | None = None) -> str | None:
+    """Return the first non-empty secret among several accepted key names."""
+    for key in keys:
+        value = get_secret(key)
+        if value is not None:
+            return value.strip()
+    return default
+
+
+# Accepted names for each Twilio secret; the first one is the documented name.
+TWILIO_SID_KEYS = ("TWILIO_ACCOUNT_SID", "TWILIO_SID")
+TWILIO_TOKEN_KEYS = ("TWILIO_AUTH_TOKEN", "TWILIO_TOKEN")
+TWILIO_FROM_KEYS = ("TWILIO_FROM_NUMBER", "TWILIO_FROM", "TWILIO_PHONE_NUMBER")
+
+
 @dataclass
 class Settings:
     gmail_user: str | None = None
@@ -81,9 +96,9 @@ def load_settings(force_demo: bool | None = None) -> Settings:
         gmail_user=get_secret("GMAIL_USER"),
         gmail_app_password=get_secret("GMAIL_APP_PASSWORD"),
         sender_name=get_secret("SENDER_NAME", "Attendance Guardian"),
-        twilio_account_sid=get_secret("TWILIO_ACCOUNT_SID"),
-        twilio_auth_token=get_secret("TWILIO_AUTH_TOKEN"),
-        twilio_from_number=get_secret("TWILIO_FROM_NUMBER"),
+        twilio_account_sid=get_first_secret(*TWILIO_SID_KEYS),
+        twilio_auth_token=get_first_secret(*TWILIO_TOKEN_KEYS),
+        twilio_from_number=get_first_secret(*TWILIO_FROM_KEYS),
         twilio_voice=get_secret("TWILIO_VOICE", "Polly.Aditi"),
         default_country_code=get_secret("DEFAULT_COUNTRY_CODE", "+91"),
         gemini_api_key=get_secret("GEMINI_API_KEY"),
