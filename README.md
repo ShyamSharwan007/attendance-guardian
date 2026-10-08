@@ -2,8 +2,8 @@
 
 Early warning for attendance shortfalls and falling marks. Faculty upload an attendance sheet and recent test results; Attendance Guardian finds students near or below the required attendance, tells each one exactly how many classes in a row they must attend to recover, flags weak or falling marks, alerts students, teachers and advisers, lets students book a meeting in a teacher's free slot, and sends an automatic weekly summary.
 
-**Live app:** `https://<your-app>.streamlit.app` *(add link after deploying)*
-**Demo video:** `https://<your-video-link>` *(add link)*
+**Live app:** `https://attendance-guardian.streamlit.app/` 
+**Demo video:** `https://drive.google.com/file/d/1kDXknk23PPxz7m5B3bE1UtH6kWLCAmSp/view?usp=drive_link` 
 
 ---
 
