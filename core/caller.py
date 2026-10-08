@@ -97,12 +97,13 @@ def place_calls(settings: Settings, calls: list[dict]) -> list[dict]:
                 for i in calls]
 
     for item in calls:
-        number, note = target(item)
-        if not number:
-            logs.append(log_entry("Voice call", str(item["phone"]), item["name"], "FAILED",
-                                  "Phone number could not be parsed"))
-            continue
+        # Each student is isolated: any error is logged and the loop moves on to the next student.
+        number = str(item.get("phone", ""))
         try:
+            parsed, note = target(item)
+            if not parsed:
+                raise ValueError(f"phone number {item.get('phone')!r} could not be parsed")
+            number = parsed
             call = client.calls.create(
                 to=number,
                 from_=settings.twilio_from_number,
@@ -110,5 +111,5 @@ def place_calls(settings: Settings, calls: list[dict]) -> list[dict]:
             )
             logs.append(log_entry("Voice call", number, item["name"], "CALLED", f"Call SID {call.sid}. {note}".strip()))
         except Exception as exc:
-            logs.append(log_entry("Voice call", number, item["name"], "FAILED", str(exc)[:200]))
+            logs.append(log_entry("Voice call", number, item.get("name", ""), "FAILED", f"failed: {exc}"[:240]))
     return logs
