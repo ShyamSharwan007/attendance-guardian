@@ -55,7 +55,6 @@ class Settings:
     twilio_account_sid: str | None = None
     twilio_auth_token: str | None = None
     twilio_from_number: str | None = None
-    twilio_voice: str = "Polly.Aditi"
     default_country_code: str = "+91"
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-2.5-flash"
@@ -99,7 +98,6 @@ def load_settings(force_demo: bool | None = None) -> Settings:
         twilio_account_sid=get_first_secret(*TWILIO_SID_KEYS),
         twilio_auth_token=get_first_secret(*TWILIO_TOKEN_KEYS),
         twilio_from_number=get_first_secret(*TWILIO_FROM_KEYS),
-        twilio_voice=get_secret("TWILIO_VOICE", "Polly.Aditi"),
         default_country_code=get_secret("DEFAULT_COUNTRY_CODE", "+91"),
         gemini_api_key=get_secret("GEMINI_API_KEY"),
         gemini_model=get_secret("GEMINI_MODEL", "gemini-2.5-flash"),

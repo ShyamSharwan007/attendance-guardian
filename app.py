@@ -24,6 +24,7 @@ st.set_page_config(
 
 PAGES = ["Upload & Analyze", "Risk Dashboard", "Send Alerts", "Book Appointment", "Weekly Summary"]
 PAGE_ALIASES = {"upload": 0, "analyze": 0, "dashboard": 1, "alerts": 2, "book": 3, "booking": 3, "summary": 4}
+TEST_CALL_MESSAGE = "Hello. This is a test call from Attendance Guardian. If you can hear this, calls are working."
 
 # Status palette (fixed, never reused for series). Always shown with its text label.
 STATUS_COLORS = {"CRITICAL": "#d03b3b", "WARNING": "#fab219", "SAFE": "#0ca30c"}
@@ -565,6 +566,10 @@ def page_alerts() -> None:
         section_header(f"3. Auto-call students below {threshold}% ({len(critical)})",
                        "An automated voice call reads out the subjects below the requirement "
                        "and how many classes in a row are needed.")
+        calls = []
+        for _, row in critical.iterrows():
+            facts = ai_text.student_facts(row, result.student_subjects(row["roll_no"]), result.threshold)
+            calls.append({"name": row["name"], "phone": row["phone"], "message": caller.call_script(facts)})
         if critical.empty:
             st.success(f"No student is below {threshold}% in any subject.")
         else:
@@ -574,18 +579,30 @@ def page_alerts() -> None:
                 "Classes needed": critical["recovery_total"],
             })
             st.dataframe(preview, hide_index=True, width="stretch")
-            calls = []
-            for _, row in critical.iterrows():
-                facts = ai_text.student_facts(row, result.student_subjects(row["roll_no"]), result.threshold)
-                calls.append({"name": row["name"], "phone": row["phone"], "message": caller.call_script(facts)})
             with st.expander("Preview the call script"):
                 st.write(calls[0]["message"])
-                st.code(caller.build_twiml(calls[0]["message"], settings.twilio_voice), language="xml")
+                st.code(caller.build_twiml(calls[0]["message"]), language="xml")
             confirm = st.checkbox(f"I confirm: place automated calls to {len(calls)} students", key="confirm_calls")
             if st.button("Auto-call students below threshold", type="primary", disabled=not confirm):
                 with st.spinner("Placing calls..."):
                     counts = add_logs(caller.place_calls(settings, calls))
                 outcome_message(counts, "calls")
+
+        test_message = calls[0]["message"] if calls else TEST_CALL_MESSAGE
+        c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
+        test_number = c1.text_input("Test call", value=settings.test_phone or "", placeholder="+91 98765 43210",
+                                    help="Calls only this number with the script above, so you can check "
+                                         "Twilio without calling every student.")
+        if c2.button("Place test call", width="stretch", disabled=not test_number.strip()):
+            with st.spinner("Calling..."):
+                entry = caller.place_test_call(settings, test_number, test_message)
+            add_logs([entry])
+            if entry["status"] == "CALLED":
+                st.success(f"Test call placed to {entry['recipient']}. {entry['detail']}")
+            elif entry["status"] == "FAILED":
+                st.error(f"Test call to {entry['recipient']} failed. {entry['detail']}")
+            else:
+                st.info(f"{entry['status']}: {entry['detail']}")
 
     show_log()
 

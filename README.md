@@ -167,7 +167,6 @@ Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and fill in 
 | `SENDER_NAME` | Display name on outgoing email |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | Twilio credentials (`TWILIO_SID`, `TWILIO_TOKEN` also accepted) |
 | `TWILIO_FROM_NUMBER` | Your Twilio phone number in E.164 format (`TWILIO_FROM`, `TWILIO_PHONE_NUMBER` also accepted) |
-| `TWILIO_VOICE` | Optional, default `Polly.Aditi` (Indian English) |
 | `DEFAULT_COUNTRY_CODE` | Optional, default `+91`, used for 10-digit numbers |
 | `GEMINI_API_KEY` | Optional, turns on AI-personalised email text |
 | `GEMINI_MODEL` | Optional, default `gemini-2.5-flash` |

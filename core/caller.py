@@ -5,11 +5,15 @@ request. Without Twilio credentials every call is logged as "DEMO - would call".
 """
 from __future__ import annotations
 
+import dataclasses
+import logging
 import re
 from xml.sax.saxutils import escape
 
 from .config import Settings
 from .notify import log_entry
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_phone(phone, country_code: str = "+91") -> str | None:
@@ -58,10 +62,18 @@ def call_script(facts: dict) -> str:
     return " ".join(lines)
 
 
-def build_twiml(message: str, voice: str = "Polly.Aditi", language: str = "en-IN") -> str:
-    say = f'<Say voice="{escape(voice)}" language="{escape(language)}">{escape(message)}</Say>'
-    return (f'<?xml version="1.0" encoding="UTF-8"?><Response>{say}<Pause length="1"/>'
-            f'<Say voice="{escape(voice)}" language="{escape(language)}">I repeat.</Say>{say}</Response>')
+def build_twiml(message: str) -> str:
+    """Minimal TwiML sent with each call: a single <Say>, nothing else."""
+    return f"<Response><Say voice='alice'>{escape(message)}</Say></Response>"
+
+
+def describe_error(exc: Exception) -> str:
+    """Full error text; Twilio errors include the HTTP status, error code and message."""
+    code, msg = getattr(exc, "code", None), getattr(exc, "msg", None)
+    if code is None and msg is None:
+        return f"{type(exc).__name__}: {exc}"
+    status = getattr(exc, "status", None)
+    return f"Twilio error {code} (HTTP {status}): {msg}"
 
 
 def place_calls(settings: Settings, calls: list[dict]) -> list[dict]:
@@ -105,11 +117,18 @@ def place_calls(settings: Settings, calls: list[dict]) -> list[dict]:
                 raise ValueError(f"phone number {item.get('phone')!r} could not be parsed")
             number = parsed
             call = client.calls.create(
-                to=number,
-                from_=settings.twilio_from_number,
-                twiml=build_twiml(item["message"], settings.twilio_voice),
+                to=str(number).strip(),
+                from_=str(settings.twilio_from_number).strip(),
+                twiml=build_twiml(item["message"]),
             )
             logs.append(log_entry("Voice call", number, item["name"], "CALLED", f"Call SID {call.sid}. {note}".strip()))
         except Exception as exc:
-            logs.append(log_entry("Voice call", number, item.get("name", ""), "FAILED", f"failed: {exc}"[:240]))
+            logger.exception("Call to %s (%s) failed: %s", number, item.get("name", ""), describe_error(exc))
+            logs.append(log_entry("Voice call", number, item.get("name", ""), "FAILED", describe_error(exc)))
     return logs
+
+
+def place_test_call(settings: Settings, phone: str, message: str) -> dict:
+    """Call one number exactly as typed (TEST_PHONE is not applied). Never raises; returns a log row."""
+    direct = dataclasses.replace(settings, test_phone=None)
+    return place_calls(direct, [{"name": "Test call", "phone": phone, "message": message}])[0]
