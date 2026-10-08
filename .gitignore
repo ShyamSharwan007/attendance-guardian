@@ -218,3 +218,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Attendance Guardian runtime output (bookings CSV, weekly summary HTML copies)
+data/
+output/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

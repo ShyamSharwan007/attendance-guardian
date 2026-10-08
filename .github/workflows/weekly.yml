@@ -1,0 +1,57 @@
+name: Weekly attendance summary
+
+on:
+  schedule:
+    # Every Monday at 03:30 UTC = 9:00 AM IST
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      auto_call:
+        description: "Also auto-call students below the threshold"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies (no Streamlit needed)
+        run: pip install "pandas>=2.2,<3" "requests>=2.31" "twilio>=9,<10"
+
+      - name: Send weekly summary
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          SENDER_NAME: ${{ secrets.SENDER_NAME }}
+          APP_URL: ${{ secrets.APP_URL }}
+          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          TEST_PHONE: ${{ secrets.TEST_PHONE }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          SUMMARY_TO: ${{ vars.SUMMARY_TO }}
+          ATTENDANCE_THRESHOLD: ${{ vars.ATTENDANCE_THRESHOLD }}
+          WARNING_MARGIN: ${{ vars.WARNING_MARGIN }}
+          AUTO_CALL: ${{ github.event.inputs.auto_call || vars.AUTO_CALL || 'false' }}
+        run: python scripts/weekly_summary.py
+
+      - name: Upload HTML copies of the summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-summary-html
+          path: output/*.html
+          if-no-files-found: ignore
+          retention-days: 14
